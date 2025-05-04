@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Send to Google Sheets</title>
+</head>
+<body>
+  <h1>Contact Form</h1>
+  <form id="Main">
+    <input type="text" name="name" placeholder="Name" required><br>
+    <input type="email" name="email" placeholder="Email" required><br>
+    <textarea name="message" placeholder="Message" required></textarea><br>
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    document.getElementById("myForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        data: form.data.value,
+        competicao: form.competicao.value,
+        eqcasa: form.eqcasa.value,
+        logocasa: form.logocasa.value,
+        plcasa: form.plcasa.value,
+        plvisitante: form.plvisitante.value,
+        logovisitante: form.logovisitante.value,
+        eqvisitante: form.eqvisitante.value,
+        mannyk: form.mannyk.value,
+        antedeguem0n: form.antedeguem0n.value,
+        sorrisao: form.sorrisao.value
+      };
+
+      fetch("https://script.google.com/macros/s/AKfycbzw63HmJP1fh6WMovFThoc4e0CakNJDZlyPy14EAhzDamF11OaBNt5ad8kDmfLEahJI1g/exec", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }).then(response => response.text())
+        .then(result => alert(result))
+        .catch(err => alert("Error: " + err));
+    });
+  </script>
+</body>
+</html>
