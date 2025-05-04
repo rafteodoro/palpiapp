@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Edit Google Sheets Field</title>
+  <meta charset="UTF-8">
+  <title>PALPITÔMETRO Copa Sula-Libertadores do Brasil 2025</title>
 </head>
 <body>
-  <h1>Editable Table</h1>
+  <h1>PalpiAPP</h1>
   <table border="1" id="dataTable">
     <thead></thead>
     <tbody></tbody>
@@ -13,14 +14,25 @@
   <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbzw63HmJP1fh6WMovFThoc4e0CakNJDZlyPy14EAhzDamF11OaBNt5ad8kDmfLEahJI1g/exec";
 
-    // Fetch and display data
     fetch(scriptURL)
       .then(res => res.json())
       .then(data => {
-        const table = document.getElementById("dataTable");
-        const headers = Object.keys(data[0]);
+        // FILTER: Only rows with game between 219–250 and mannyk is empty
+        data = data.filter(row => {
+          const game = Number(row.game);
+          const mannyk = row.mannyk;
+          return game >= 219 && game <= 250 && (!mannyk || mannyk.trim() === "");
+        });
 
-        // Create header row
+        if (data.length === 0) {
+          document.body.innerHTML += "<p>No matching data found.</p>";
+          return;
+        }
+
+        const headers = Object.keys(data[0]);
+        const table = document.getElementById("dataTable");
+
+        // Create table headers
         const thead = table.querySelector("thead");
         const headRow = document.createElement("tr");
         headers.forEach(h => {
@@ -31,54 +43,59 @@
         headRow.appendChild(document.createElement("th")).textContent = "Update";
         thead.appendChild(headRow);
 
-        // Create body rows
+        // Create table body
         const tbody = table.querySelector("tbody");
-        data.forEach((row, rowIndex) => {
+        data.forEach((row, index) => {
           const tr = document.createElement("tr");
+
           headers.forEach(h => {
             const td = document.createElement("td");
-            if (h === "Status") {
+
+            // Make 'mannyk' field editable
+            if (h === "mannyk") {
               const input = document.createElement("input");
               input.value = row[h];
-              input.dataset.row = rowIndex + 2; // Sheet rows start at 1, plus header
+              input.dataset.row = index + 2; // row index in sheet (+2 to account for header + 1-based indexing)
               td.appendChild(input);
             } else {
               td.textContent = row[h];
             }
+
             tr.appendChild(td);
           });
 
-          // Add update button
-          const updateBtn = document.createElement("button");
-          updateBtn.textContent = "Save";
-          updateBtn.onclick = () => {
+          // Add Save button
+          const saveBtn = document.createElement("button");
+          saveBtn.textContent = "Save";
+          saveBtn.onclick = () => {
             const input = tr.querySelector("input");
             const newValue = input.value;
             const rowNum = input.dataset.row;
-            updateStatus(rowNum, newValue);
+            updateMannyk(rowNum, newValue);
           };
           const btnTd = document.createElement("td");
-          btnTd.appendChild(updateBtn);
+          btnTd.appendChild(saveBtn);
           tr.appendChild(btnTd);
 
           tbody.appendChild(tr);
         });
       });
 
-    // Function to update the sheet
-    function updateStatus(row, value) {
+    function updateMannyk(row, value) {
       fetch(scriptURL, {
         method: "POST",
         body: JSON.stringify({
           action: "update",
           row: Number(row),
-          column: "Status", // the header name
+          column: "mannyk",
           value: value
         }),
         headers: {
           "Content-Type": "application/json"
         }
-      }).then(r => r.text()).then(alert);
+      }).then(r => r.text())
+        .then(msg => alert("Response: " + msg))
+        .catch(err => alert("Error: " + err));
     }
   </script>
 </body>
