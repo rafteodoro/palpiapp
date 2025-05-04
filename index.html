@@ -1,45 +1,85 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Send to Google Sheets</title>
+  <title>Edit Google Sheets Field</title>
 </head>
 <body>
-  <h1>Contact Form</h1>
-  <form id="Main">
-    <input type="text" name="name" placeholder="Name" required><br>
-    <input type="email" name="email" placeholder="Email" required><br>
-    <textarea name="message" placeholder="Message" required></textarea><br>
-    <button type="submit">Send</button>
-  </form>
+  <h1>Editable Table</h1>
+  <table border="1" id="dataTable">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
 
   <script>
-    document.getElementById("myForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const form = e.target;
-      const data = {
-        data: form.data.value,
-        competicao: form.competicao.value,
-        eqcasa: form.eqcasa.value,
-        logocasa: form.logocasa.value,
-        plcasa: form.plcasa.value,
-        plvisitante: form.plvisitante.value,
-        logovisitante: form.logovisitante.value,
-        eqvisitante: form.eqvisitante.value,
-        mannyk: form.mannyk.value,
-        antedeguem0n: form.antedeguem0n.value,
-        sorrisao: form.sorrisao.value
-      };
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzw63HmJP1fh6WMovFThoc4e0CakNJDZlyPy14EAhzDamF11OaBNt5ad8kDmfLEahJI1g/exec";
 
-      fetch("https://script.google.com/macros/s/AKfycbzw63HmJP1fh6WMovFThoc4e0CakNJDZlyPy14EAhzDamF11OaBNt5ad8kDmfLEahJI1g/exec", {
+    // Fetch and display data
+    fetch(scriptURL)
+      .then(res => res.json())
+      .then(data => {
+        const table = document.getElementById("dataTable");
+        const headers = Object.keys(data[0]);
+
+        // Create header row
+        const thead = table.querySelector("thead");
+        const headRow = document.createElement("tr");
+        headers.forEach(h => {
+          const th = document.createElement("th");
+          th.textContent = h;
+          headRow.appendChild(th);
+        });
+        headRow.appendChild(document.createElement("th")).textContent = "Update";
+        thead.appendChild(headRow);
+
+        // Create body rows
+        const tbody = table.querySelector("tbody");
+        data.forEach((row, rowIndex) => {
+          const tr = document.createElement("tr");
+          headers.forEach(h => {
+            const td = document.createElement("td");
+            if (h === "Status") {
+              const input = document.createElement("input");
+              input.value = row[h];
+              input.dataset.row = rowIndex + 2; // Sheet rows start at 1, plus header
+              td.appendChild(input);
+            } else {
+              td.textContent = row[h];
+            }
+            tr.appendChild(td);
+          });
+
+          // Add update button
+          const updateBtn = document.createElement("button");
+          updateBtn.textContent = "Save";
+          updateBtn.onclick = () => {
+            const input = tr.querySelector("input");
+            const newValue = input.value;
+            const rowNum = input.dataset.row;
+            updateStatus(rowNum, newValue);
+          };
+          const btnTd = document.createElement("td");
+          btnTd.appendChild(updateBtn);
+          tr.appendChild(btnTd);
+
+          tbody.appendChild(tr);
+        });
+      });
+
+    // Function to update the sheet
+    function updateStatus(row, value) {
+      fetch(scriptURL, {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          action: "update",
+          row: Number(row),
+          column: "Status", // the header name
+          value: value
+        }),
         headers: {
           "Content-Type": "application/json"
         }
-      }).then(response => response.text())
-        .then(result => alert(result))
-        .catch(err => alert("Error: " + err));
-    });
+      }).then(r => r.text()).then(alert);
+    }
   </script>
 </body>
 </html>
