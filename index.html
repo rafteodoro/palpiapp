@@ -82,20 +82,19 @@
       });
 
     function updateMannyk(row, value) {
+      const formData = new URLSearchParams();
+      formData.append("action", "update");
+      formData.append("row", row);
+      formData.append("column", "mannyk");
+      formData.append("value", value);
+
       fetch(scriptURL, {
         method: "POST",
-        body: JSON.stringify({
-          action: "update",
-          row: Number(row),
-          column: "mannyk",
-          value: value
-        }),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }).then(r => r.text())
-        .then(msg => alert("Response: " + msg))
-        .catch(err => alert("Error: " + err));
+        body: formData
+      })
+      .then(r => r.text())
+      .then(msg => alert("Response: " + msg))
+      .catch(err => alert("Error: " + err));
     }
   </script>
 </body>
