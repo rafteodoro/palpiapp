@@ -1,101 +1,100 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>PALPITÔMETRO Copa Sula-Libertadores do Brasil 2025</title>
-</head>
-<body>
-  <h1>PalpiAPP</h1>
-  <table border="1" id="dataTable">
-    <thead></thead>
-    <tbody></tbody>
-  </table>
+---
+layout: default
+title: PALPITÔMETRO Copa Sula-Libertadores do Brasil 2025
+---
 
-  <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzw63HmJP1fh6WMovFThoc4e0CakNJDZlyPy14EAhzDamF11OaBNt5ad8kDmfLEahJI1g/exec";
+<div class="container mt-5">
+  <h1 class="mb-4">MAKE YOUR BETS</h1>
 
-    fetch(scriptURL)
-      .then(res => res.json())
-      .then(data => {
-        // FILTER: Only rows with game between 219–250 and mannyk is empty
-        data = data.filter(row => {
-          const game = Number(row.game);
-          const mannyk = row.mannyk;
-          return game >= 219 && game <= 250 && (!mannyk || mannyk.trim() === "");
-        });
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped table-hover align-middle" id="dataTable">
+      <thead class="table-dark"></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
 
-        if (data.length === 0) {
-          document.body.innerHTML += "<p>No matching data found.</p>";
-          return;
-        }
+<script>
+  const scriptURL = "https://script.google.com/macros/s/AKfycbzw63HmJP1fh6WMovFThoc4e0CakNJDZlyPy14EAhzDamF11OaBNt5ad8kDmfLEahJI1g/exec";
 
-        const headers = Object.keys(data[0]);
-        const table = document.getElementById("dataTable");
-
-        // Create table headers
-        const thead = table.querySelector("thead");
-        const headRow = document.createElement("tr");
-        headers.forEach(h => {
-          const th = document.createElement("th");
-          th.textContent = h;
-          headRow.appendChild(th);
-        });
-        headRow.appendChild(document.createElement("th")).textContent = "Update";
-        thead.appendChild(headRow);
-
-        // Create table body
-        const tbody = table.querySelector("tbody");
-        data.forEach((row, index) => {
-          const tr = document.createElement("tr");
-
-          headers.forEach(h => {
-            const td = document.createElement("td");
-
-            // Make 'mannyk' field editable
-            if (h === "mannyk") {
-              const input = document.createElement("input");
-              input.value = row[h];
-              input.dataset.row = index + 2; // row index in sheet (+2 to account for header + 1-based indexing)
-              td.appendChild(input);
-            } else {
-              td.textContent = row[h];
-            }
-
-            tr.appendChild(td);
-          });
-
-          // Add Save button
-          const saveBtn = document.createElement("button");
-          saveBtn.textContent = "Save";
-          saveBtn.onclick = () => {
-            const input = tr.querySelector("input");
-            const newValue = input.value;
-            const rowNum = input.dataset.row;
-            updateMannyk(rowNum, newValue);
-          };
-          const btnTd = document.createElement("td");
-          btnTd.appendChild(saveBtn);
-          tr.appendChild(btnTd);
-
-          tbody.appendChild(tr);
-        });
+  fetch(scriptURL)
+    .then(res => res.json())
+    .then(data => {
+      data = data.filter(row => {
+        const game = Number(row.game);
+        const mannyk = row.mannyk;
+        return game >= 219 && game <= 250 && (!mannyk || mannyk.trim() === "");
       });
 
-    function updateMannyk(row, value) {
-      const formData = new URLSearchParams();
-      formData.append("action", "update");
-      formData.append("row", row);
-      formData.append("column", "mannyk");
-      formData.append("value", value);
+      if (data.length === 0) {
+        document.querySelector(".container").insertAdjacentHTML("beforeend", "<div class='alert alert-warning'>No matching data found.</div>");
+        return;
+      }
 
-      fetch(scriptURL, {
-        method: "POST",
-        body: formData
-      })
-      .then(r => r.text())
-      .then(msg => alert("Response: " + msg))
-      .catch(err => alert("Error: " + err));
-    }
-  </script>
-</body>
-</html>
+      const headers = Object.keys(data[0]);
+      const thead = document.querySelector("#dataTable thead");
+      const tbody = document.querySelector("#dataTable tbody");
+
+      // Header
+      const headRow = document.createElement("tr");
+      headers.forEach(h => {
+        const th = document.createElement("th");
+        th.textContent = h.charAt(0).toUpperCase() + h.slice(1);
+        headRow.appendChild(th);
+      });
+      const updateTh = document.createElement("th");
+      updateTh.textContent = "Update";
+      headRow.appendChild(updateTh);
+      thead.appendChild(headRow);
+
+      // Rows
+      data.forEach((row, index) => {
+        const tr = document.createElement("tr");
+
+        headers.forEach(h => {
+          const td = document.createElement("td");
+          if (h === "mannyk") {
+            const input = document.createElement("input");
+            input.className = "form-control";
+            input.value = row[h];
+            input.dataset.row = index + 2;
+            td.appendChild(input);
+          } else {
+            td.textContent = row[h];
+          }
+          tr.appendChild(td);
+        });
+
+        const btnTd = document.createElement("td");
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save";
+        saveBtn.className = "btn btn-sm btn-primary";
+        saveBtn.onclick = () => {
+          const input = tr.querySelector("input");
+          const newValue = input.value;
+          const rowNum = input.dataset.row;
+          updateMannyk(rowNum, newValue);
+        };
+        btnTd.appendChild(saveBtn);
+        tr.appendChild(btnTd);
+
+        tbody.appendChild(tr);
+      });
+    });
+
+  function updateMannyk(row, value) {
+    const formData = new URLSearchParams();
+    formData.append("action", "update");
+    formData.append("row", row);
+    formData.append("column", "mannyk");
+    formData.append("value", value);
+
+    fetch(scriptURL, {
+      method: "POST",
+      body: formData
+    })
+    .then(r => r.text())
+    .then(msg => alert("Response: " + msg))
+    .catch(err => alert("Error: " + err));
+  }
+</script>
