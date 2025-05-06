@@ -5,80 +5,86 @@ title: PALPITÔMETRO Copa Sula-Libertadores do Brasil 2025
 
 <div class="container mt-5">
   <h1 class="mb-4">MAKE YOUR BETS</h1>
-
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped table-hover align-middle" id="dataTable">
-      <thead class="table-dark"></thead>
-      <tbody></tbody>
-    </table>
+  <div class="text-center my-4">
+    <button class="btn btn-success" onclick="saveAll()">Salvar Todos</button>
   </div>
+
+  <div id="cardContainer" class="row g-3"></div>
 </div>
 
 <script>
-  const scriptURL = "https://script.google.com/macros/s/AKfycbzw63HmJP1fh6WMovFThoc4e0CakNJDZlyPy14EAhzDamF11OaBNt5ad8kDmfLEahJI1g/exec";
+  const scriptURL =
+    "https://script.google.com/macros/s/AKfycbzw63HmJP1fh6WMovFThoc4e0CakNJDZlyPy14EAhzDamF11OaBNt5ad8kDmfLEahJI1g/exec";
 
   fetch(scriptURL)
-    .then(res => res.json())
-    .then(data => {
-      data = data.filter(row => {
+    .then((res) => res.json())
+    .then((data) => {
+      data = data.filter((row) => {
         const game = Number(row.game);
         const mannyk = row.mannyk;
-        return game >= 219 && game <= 250 && (!mannyk || mannyk.trim() === "");
+        return game >= 219 && game <= 250;
       });
 
+      const container = document.getElementById("cardContainer");
+
       if (data.length === 0) {
-        document.querySelector(".container").insertAdjacentHTML("beforeend", "<div class='alert alert-warning'>No matching data found.</div>");
+        container.innerHTML =
+          "<div class='alert alert-warning'>No matching data found.</div>";
         return;
       }
 
-      const headers = Object.keys(data[0]);
-      const thead = document.querySelector("#dataTable thead");
-      const tbody = document.querySelector("#dataTable tbody");
-
-      // Header
-      const headRow = document.createElement("tr");
-      headers.forEach(h => {
-        const th = document.createElement("th");
-        th.textContent = h.charAt(0).toUpperCase() + h.slice(1);
-        headRow.appendChild(th);
-      });
-      const updateTh = document.createElement("th");
-      updateTh.textContent = "Update";
-      headRow.appendChild(updateTh);
-      thead.appendChild(headRow);
-
-      // Rows
       data.forEach((row, index) => {
-        const tr = document.createElement("tr");
+        const card = document.createElement("div");
+        card.className = "col-12 col-md-6 col-lg-4";
+        const selected = (row.mannyk || "").trim();
+        const options = [row.team_home, row.team_away, "Empate"];
 
-        headers.forEach(h => {
-          const td = document.createElement("td");
-          if (h === "mannyk") {
-            const input = document.createElement("input");
-            input.className = "form-control";
-            input.value = row[h];
-            input.dataset.row = index + 2;
-            td.appendChild(input);
-          } else {
-            td.textContent = row[h];
-          }
-          tr.appendChild(td);
+        let selectHTML = `<select class="form-select mb-2" id="mannyk-${index}" data-row="${
+          index + 2
+        }">`;
+
+        if (!selected) {
+          selectHTML += `<option value="" selected disabled>Escolha...</option>`;
+        }
+
+        options.forEach((option) => {
+          const isSelected =
+            option.toLowerCase().trim() === selected.toLowerCase()
+              ? "selected"
+              : "";
+          selectHTML += `<option value="${option}" ${isSelected}>${option}</option>`;
         });
 
-        const btnTd = document.createElement("td");
-        const saveBtn = document.createElement("button");
-        saveBtn.textContent = "Save";
-        saveBtn.className = "btn btn-sm btn-primary";
-        saveBtn.onclick = () => {
-          const input = tr.querySelector("input");
-          const newValue = input.value;
-          const rowNum = input.dataset.row;
-          updateMannyk(rowNum, newValue);
-        };
-        btnTd.appendChild(saveBtn);
-        tr.appendChild(btnTd);
+        selectHTML += `</select>`;
 
-        tbody.appendChild(tr);
+        card.innerHTML = `
+        <div class="card shadow-sm h-100 p-3">
+          <div class="d-flex justify-content-between mb-2">
+            ${row.competition}
+            <span>${formatDate(row.date)}</span>
+          </div>
+
+          <div class="d-flex align-items-center mb-2">
+            <img src="${
+              row.logo_home
+            }" alt="Home Logo" style="width: 32px; height: 32px;" class="me-2">
+            <span><strong>${row.team_home}</strong></span>
+          </div>
+
+          <div class="d-flex align-items-center mb-3">
+            <img src="${
+              row.logo_away
+            }" alt="Away Logo" style="width: 32px; height: 32px;" class="me-2">
+            <span><strong>${row.team_away}</strong></span>
+          </div>
+
+          <div>
+            ${selectHTML}
+          </div>
+        </div>
+      `;
+
+        container.appendChild(card);
       });
     });
 
@@ -91,10 +97,52 @@ title: PALPITÔMETRO Copa Sula-Libertadores do Brasil 2025
 
     fetch(scriptURL, {
       method: "POST",
-      body: formData
+      body: formData,
     })
-    .then(r => r.text())
-    .then(msg => alert("Response: " + msg))
-    .catch(err => alert("Error: " + err));
+      .then((r) => r.text())
+      .then((msg) => alert("Updated!"))
+      .catch((err) => alert("Error: " + err));
+  }
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0-based
+    return `${day}/${month}`;
+  }
+
+  function saveAll() {
+    const selects = document.querySelectorAll('select[id^="mannyk-"]');
+    const updates = [];
+
+    selects.forEach((select) => {
+      const row = select.dataset.row;
+      const value = select.value;
+
+      if (value) {
+        updates.push({ row, mannyk: value });
+      }
+    });
+
+    if (updates.length === 0) {
+      alert("Nenhuma alteração para salvar.");
+      return;
+    }
+
+    fetch(scriptURL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ updates }),
+    })
+      .then((response) => response.text())
+      .then((text) => {
+        console.log("Success:", text);
+        alert("Atualizações salvas com sucesso!");
+      })
+      .catch((error) => {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar alterações.");
+      });
   }
 </script>
