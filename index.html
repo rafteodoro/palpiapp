@@ -14,7 +14,7 @@ title: PALPITÔMETRO Copa Sula-Libertadores do Brasil 2025
 
 <script>
   const scriptURL =
-    "https://script.google.com/macros/s/AKfycbzw63HmJP1fh6WMovFThoc4e0CakNJDZlyPy14EAhzDamF11OaBNt5ad8kDmfLEahJI1g/exec";
+    "https://script.google.com/macros/s/AKfycbwrM-Dk8Q0BmP3w53ODuH_bRaXY8wFNhQ_fffb_XMVcV6eUb0O5UuEX-O_UdVm5Ud-L/exec";
 
   fetch(scriptURL)
     .then((res) => res.json())
@@ -22,7 +22,8 @@ title: PALPITÔMETRO Copa Sula-Libertadores do Brasil 2025
       data = data.filter((row) => {
         const game = Number(row.game);
         const mannyk = row.mannyk;
-        return game >= 219 && game <= 250;
+        const teamHome = row.team_home && row.team_home.trim() !== "";  // Check if team_home is not blank
+        return game >= 219 && game <= 250 && teamHome;
       });
 
       const container = document.getElementById("cardContainer");
@@ -40,7 +41,7 @@ title: PALPITÔMETRO Copa Sula-Libertadores do Brasil 2025
         const options = [row.team_home, row.team_away, "Empate"];
 
         let selectHTML = `<select class="form-select mb-2" id="mannyk-${index}" data-row="${
-          index + 2
+          index + 3
         }">`;
 
         if (!selected) {
@@ -103,6 +104,7 @@ title: PALPITÔMETRO Copa Sula-Libertadores do Brasil 2025
       .then((msg) => alert("Updated!"))
       .catch((err) => alert("Error: " + err));
   }
+
   function formatDate(dateString) {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, "0");
@@ -115,25 +117,29 @@ title: PALPITÔMETRO Copa Sula-Libertadores do Brasil 2025
     const updates = [];
 
     selects.forEach((select) => {
-      const row = select.dataset.row;
-      const value = select.value;
+      const row = select.dataset.row ; // Get the row number from the data-row attribute
+      const value = select.value; // Get the selected value
 
+      // Push the row and value if it's not empty
       if (value) {
+        console.log(row, value);
         updates.push({ row, mannyk: value });
       }
     });
 
+    // If no updates, show an alert and return early
     if (updates.length === 0) {
       alert("Nenhuma alteração para salvar.");
       return;
     }
 
+    const formData = new FormData();
+    formData.append("payload", JSON.stringify({ updates }));
+
+    // Use the correct URL for your Apps Script endpoint
     fetch(scriptURL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ updates }),
+      body: formData,
     })
       .then((response) => response.text())
       .then((text) => {
